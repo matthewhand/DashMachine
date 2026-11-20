@@ -95,12 +95,57 @@ def get_data_source(data_source):
 
 
 def resize_template_app_images():
+    """Downscale the bundled app icons to at most 64x64.
+
+    This runs on every boot, before the app is importable, so it must never be
+    able to break startup:
+      * it is idempotent - an icon already at or below 64px is left alone, so
+        a normal boot performs no writes at all;
+      * writes are atomic - the resized image is written to a temporary file
+        in the same directory and renamed over the original, so a kill in the
+        middle of a save cannot leave a truncated icon behind;
+      * a damaged icon is skipped and logged instead of raising, so a single
+        bad file can no longer stop the whole dashboard from starting.
+    """
     folder = os.path.join(images_folder, "apps")
-    for file in os.listdir(folder):
+    try:
+        filenames = sorted(os.listdir(folder))
+    except FileNotFoundError:
+        return
+    for file in filenames:
         fp = os.path.join(folder, file)
-        image = Image.open(fp)
-        image.thumbnail((64, 64))
-        image.save(fp)
+        if file.endswith(".tmp"):
+            # leftover from an interrupted atomic save
+            try:
+                os.remove(fp)
+            except OSError:
+                pass
+            continue
+        if not os.path.isfile(fp):
+            continue
+        try:
+            with Image.open(fp) as image:
+                image.load()
+                if max(image.size) <= 64:
+                    continue
+                image_format = image.format or Image.registered_extensions().get(
+                    os.path.splitext(file)[1].lower(), "PNG"
+                )
+                image.thumbnail((64, 64))
+                tmp_fp = fp + ".tmp"
+                try:
+                    image.save(tmp_fp, format=image_format)
+                    os.replace(tmp_fp, fp)
+                finally:
+                    if os.path.exists(tmp_fp):
+                        try:
+                            os.remove(tmp_fp)
+                        except OSError:
+                            pass
+        except Exception as exc:  # noqa: BLE001 - startup must not fail here
+            print(f"dashmachine: skipping unreadable icon {file!r}: {exc}", flush=True)
+            continue
+
 
 
 def get_update_message_html():
