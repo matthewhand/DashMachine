@@ -1,5 +1,5 @@
 var d = document.getElementById("settings-sidenav");
-d.className += " active theme-primary";
+if (d) { d.classList.add('active'); }
 
 $( document ).ready(function() {
     $("#settings-readme table").addClass('responsive-table');

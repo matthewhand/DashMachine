@@ -6,7 +6,7 @@
   <form class="tcdrop-form" method="post"
         data-cache-url="{{url_for('main.cacheFile')}}"
         data-clear-cache-url="{{url_for('main.clearCache')}}"
-        data-max-files="{{max_files}}",
+        data-max-files="{{max_files}}"
         data-allowed-types="{{allowed_types}}">
     <input id="{{id}}-tcdrop-input" type="file" name="file" class="tcdrop tcdrop-input" onchange="{{on_add}}" multiple/>
     <label class="tcdrop-label" for="{{id}}-tcdrop-input">Drag & drop or <u>choose</u></label>

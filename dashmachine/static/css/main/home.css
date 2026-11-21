@@ -1,62 +1,27 @@
+/* Home page specifics on top of the shared design system. */
 
-.tags-select-col {
-    position: relative;
-    top: 15px;
-    margin: 0;
-    border-radius: .4rem;
-    height: 45px;
-    -webkit-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.12), 0 1px 3px 0 rgba(0, 0, 0, 0.12), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.12), 0 1px 3px 0 rgba(0, 0, 0, 0.12), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
-}
-.tags-select-col .select-wrapper {
-    top: 5px;
-}
-.tags-select-col .select-wrapper input {
-    color: var(--theme-secondary);
-}
-@media screen and (max-width: 992px) {
-    .tags-select-col {
-        top: 0;
-        /*width: calc(100vw - 45px) !important;*/
-        /*margin-left: 15px !important;*/
-    }
+/* When a wallpaper is configured, keep card text readable over it. */
+#main[style*="background-image"] .app-card,
+#main[style*="background-image"] .collection-card,
+#main[style*="background-image"] .custom-card {
+    background: color-mix(in srgb, var(--theme-surface) 92%, transparent);
+    backdrop-filter: blur(6px);
 }
 
-.app-card .card-reveal {
-    position:
-
+#main[style*="background-image"] .toolbar {
+    padding: 0.5rem;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--theme-background) 70%, transparent);
+    backdrop-filter: blur(10px);
 }
 
-#list-view-collection .app-a {
-    background: rgba(var(--theme-surface-rgb), 0.8);
+/* Slightly tighter cards when there are many of them. */
+.tag-apps-row {
+    align-content: start;
 }
-#list-view-collection .app-a:hover {
-    background: var(--theme-surface-1);
-}
-#list-view-collection .app-name {
-    font-size: 1.3rem;
-    position: relative;
-    margin-left: 1rem;
-    bottom: 2px;
-}
-#list-view-collection .app-description {
-    margin-left: .4rem;
-}
-#list-view-collection .app-icon {
-    height: 24px;
-    position: relative;
-    top: 4px;
-}
-#list-view-collection {
-    border: 0;
-}
-#list-view-collection .data-source-container {
-    position: relative;
-    top: 6px;
-}
-#list-view-collection .material-icons-outlined {
-    font-size: 1.2rem;
-    position: relative;
-    margin-left: .5rem;
-    top: 1px;
+
+.tag-apps-row.hide {
+    display: none;
 }

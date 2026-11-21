@@ -78,6 +78,19 @@ def images_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(
         sources_module, "backgrounds_images_folder", str(images / "backgrounds")
     )
+    # routes bind the folder constants at import time, so point those at the
+    # scratch copy too; otherwise uploads land in the real data directory.
+    from dashmachine.settings_system import routes as settings_routes
+
+    monkeypatch.setattr(settings_routes, "icons_images_folder", str(images / "icons"))
+    monkeypatch.setattr(
+        settings_routes, "backgrounds_images_folder", str(images / "backgrounds")
+    )
+    monkeypatch.setattr(
+        settings_routes,
+        "IMAGE_FOLDERS",
+        {"icons": str(images / "icons"), "backgrounds": str(images / "backgrounds")},
+    )
     return images
 
 

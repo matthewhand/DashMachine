@@ -343,9 +343,11 @@ class Platform:
             self.tls_cert = None
             self.tls_key = None
         else:
+            # Missing TLS material is reported by process(); __init__ must
+            # always return None, so returning an error string here raised
+            # TypeError instead of showing the message on the card.
             if self.tls_mode == "Both":
-                if self.tls_ca == None or self.tls_cert == None or self.tls_key == None:
-                    return "tls_mode set to Both, and missing tls_ca/tls_cert/tls_key"
+                pass
             elif self.tls_mode == "Client":
                 self.tls_ca = False
             elif self.tls_mode == "Server":

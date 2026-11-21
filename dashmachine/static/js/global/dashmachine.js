@@ -15,7 +15,9 @@ function updateTabIndicator(){
 }
 
 function init_select(){
-    $('select').formSelect({
+    // #tags-select is a native control styled by the design system; running
+    // Materialize over it would replace it with its own dropdown.
+    $('select').not('#tags-select').formSelect({
         dropdownOptions:{
             container: document.body,
             constrainWidth: true,
@@ -61,24 +63,26 @@ function init_copy_btn(parent_class){
 }
 
 function hide_sidenav() {
-    $("#main-sidenav").addClass('hide');
-    $("#main.main-full").css('padding-left', 0);
-    $("#show-sidenav").removeClass('hide');
+    document.body.classList.add('sidenav-hidden');
     localStorage.setItem('sidenav_hidden', 'true');
 }
 
 function no_sidebar() {
-    $("#main-sidenav").remove();
-    $("#main.main-full").css('padding-left', 0);
+    document.body.classList.add('sidenav-hidden', 'no-sidenav');
     $("#no-sidenav").removeClass('hide');
     localStorage.setItem('sidenav_hidden', 'no_sidebar');
 }
 
 function show_sidenav(){
-    $("#main-sidenav").removeClass('hide');
-    $("#main.main-full").css('padding-left', 64);
-    $("#show-sidenav").addClass('hide');
-    localStorage.setItem('sidenav_hidden', null);
+    document.body.classList.remove('sidenav-hidden', 'no-sidenav');
+    $("#no-sidenav").addClass('hide');
+    localStorage.removeItem('sidenav_hidden');
+}
+
+function toggle_drawer(open) {
+    document.body.classList.toggle('drawer-open', open === undefined
+        ? !document.body.classList.contains('drawer-open')
+        : open);
 }
 
 function apply_settings(settings){
@@ -143,7 +147,11 @@ $(document).ready(function () {
     $("#update-message-modal").modal({
         dismissible: false
     });
-    if ($("#update-message-content").text().length > 1){
+    // Do not put an announcement in front of the sign-in form; it is modal and
+    // undismissable until read, which made logging in impossible on a phone.
+    // trim(): the template leaves whitespace inside the content div, which made
+    // this test pass on an empty message and opened a blank modal every load.
+    if ($("#update-message-content").text().trim().length > 1 && $("#user-name").val().length > 0){
         $("#update-message-modal").modal('open');
     }
     $("#update-message-read-btn").on('click', function(e) {
@@ -164,7 +172,15 @@ $(document).ready(function () {
         show_sidenav();
     });
 
-    $( "#show-sidenav" ).draggable({ axis: "y" });
+    $("#sidenav-mobile-toggle-btn, #sidenav-scrim").on('click', function(e) {
+        e.preventDefault();
+        toggle_drawer();
+    });
+
+    // close the drawer after navigating on a phone
+    $("#main-sidenav .side-link").on('click', function() {
+        toggle_drawer(false);
+    });
 
     $(".dropdown-trigger").dropdown({
         coverTrigger: false,
@@ -201,137 +217,6 @@ $(document).ready(function () {
         });
     }
 
-    // mobile sidenav for top-nav layout
-    $('.top-nav-mobile-sidenav').sidenav({
-        edge: 'right'
-    });
-
-    // Init collapsible
-    $(".collapsible").collapsible({
-        accordion: true,
-        onOpenStart: function() {
-            // Removed open class first and add open at collapsible active
-            $(".collapsible > li.open").removeClass("open");
-            setTimeout(function() {
-                $("#slide-out > li.active > a")
-                    .parent()
-                    .addClass("open");
-            }, 10);
-        }
-    });
-
-    // Add open class on init
-    $("#slide-out > li.active > a")
-        .parent()
-        .addClass("open");
-
-    // Open active menu for multi level
-    if ($("li.active .collapsible-sub .collapsible").find("a.active").length > 0) {
-        $("li.active .collapsible-sub .collapsible")
-            .find("a.active")
-            .closest("div.collapsible-body")
-            .show();
-        $("li.active .collapsible-sub .collapsible")
-            .find("a.active")
-            .closest("div.collapsible-body")
-            .closest("li")
-            .addClass("active");
-    }
-
-    // Auto Scroll menu to the active item
-    var position;
-    if (
-        $(".sidenav-main li a.active")
-            .parent("li.active")
-            .parent("ul.collapsible-sub").length > 0
-    ) {
-        position = $(".sidenav-main li a.active")
-            .parent("li.active")
-            .parent("ul.collapsible-sub")
-            .position();
-    } else {
-        position = $(".sidenav-main li a.active")
-            .parent("li.active")
-            .position();
-    }
-    setTimeout(function() {
-        if (position !== undefined) {
-            $(".sidenav-main ul")
-                .stop()
-                .animate({ scrollTop: position.top - 300 }, 300);
-        }
-    }, 300);
-
-    $("#slide-out").sidenav();
-
-    // Collapsible navigation menu
-    $(".nav-collapsible .navbar-toggler").click(function() {
-        // Toggle navigation expan and collapse on radio click
-        if ($(".sidenav-main").hasClass("nav-expanded") && !$(".sidenav-main").hasClass("nav-lock")) {
-            $(".sidenav-main").toggleClass("nav-expanded");
-            $("#main").toggleClass("main-full");
-        } else {
-            $("#main").toggleClass("main-full");
-        }
-        // Set navigation lock / unlock with radio icon
-        if (
-            $(this)
-                .children()
-                .text() == "radio_button_unchecked"
-        ) {
-            $(this)
-                .children()
-                .text("radio_button_checked");
-            $(".sidenav-main").addClass("nav-lock");
-            $(".navbar .nav-collapsible").addClass("sideNav-lock");
-        } else {
-            $(this)
-                .children()
-                .text("radio_button_unchecked");
-            $(".sidenav-main").removeClass("nav-lock");
-            $(".navbar .nav-collapsible").removeClass("sideNav-lock");
-        }
-    });
-
-    // Expand navigation on mouseenter event
-    $(".sidenav-main.nav-collapsible, .navbar .brand-sidebar").mouseenter(function() {
-        if (!$(".sidenav-main.nav-collapsible").hasClass("nav-lock")) {
-            $(".sidenav-main.nav-collapsible, .navbar .nav-collapsible")
-                .addClass("nav-expanded")
-                .removeClass("nav-collapsed");
-            $("#slide-out > li.close > a")
-                .parent()
-                .addClass("open")
-                .removeClass("close");
-
-            setTimeout(function() {
-                // Open only if collapsible have the children
-                if ($(".collapsible .open").children().length > 1) {
-                    $(".collapsible").collapsible("open", $(".collapsible .open").index());
-                }
-            }, 100);
-        }
-    });
-
-    // Collapse navigation on mouseleave event
-    $(".sidenav-main.nav-collapsible, .navbar .brand-sidebar").mouseleave(function() {
-        if (!$(".sidenav-main.nav-collapsible").hasClass("nav-lock")) {
-            var openLength = $(".collapsible .open").children().length;
-            $(".sidenav-main.nav-collapsible, .navbar .nav-collapsible")
-                .addClass("nav-collapsed")
-                .removeClass("nav-expanded");
-            $("#slide-out > li.open > a")
-                .parent()
-                .addClass("close")
-                .removeClass("open");
-            setTimeout(function() {
-                // Open only if collapsible have the children
-                if (openLength > 1) {
-                    $(".collapsible").collapsible("close", $(".collapsible .close").index());
-                }
-            }, 100);
-        }
-    });
 
     // make jquery contains selector case unaware
     jQuery.expr[':'].contains = function(a, i, m) {

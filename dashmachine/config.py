@@ -25,26 +25,56 @@ def env_bool(name, default=False):
     raise ValueError(f"{name} must be a boolean, got {value!r}")
 
 
-def load_secret_key():
-    """Read the persisted secret, creating it on first boot.
-
-    Kept in the data volume so restarting the container does not sign everyone
-    out. Written with 0600 permissions.
-    """
-    path = os.path.join(user_data_folder, ".secret")
+def _read_secret_file(path):
     try:
         with open(path, "r", encoding="utf-8") as secret_file:
-            key = secret_file.read().strip()
+            return secret_file.read().strip()
     except FileNotFoundError:
-        key = ""
+        return ""
 
-    if len(key) < 32:
-        key = secrets.token_hex(32)
-        os.makedirs(user_data_folder, exist_ok=True)
-        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+
+def load_secret_key():
+    """Read the persisted secret, creating it atomically on first boot.
+
+    Kept in the data volume so restarting the container does not sign everyone
+    out. Written with 0600 permissions to a unique temporary file and linked
+    into place so concurrent Gunicorn workers on a fresh volume agree on the
+    same secret without partial reads or clobbering.
+    """
+    path = os.path.join(user_data_folder, ".secret")
+    key = _read_secret_file(path)
+    if len(key) >= 32:
+        return key
+
+    os.makedirs(user_data_folder, exist_ok=True)
+    candidate = secrets.token_hex(32)
+    tmp_path = os.path.join(
+        user_data_folder, f".secret.{os.getpid()}.{secrets.token_hex(6)}.tmp"
+    )
+    try:
+        fd = os.open(tmp_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(fd, "w", encoding="utf-8") as secret_file:
-            secret_file.write(key)
-    return key
+            secret_file.write(candidate)
+            secret_file.flush()
+            os.fsync(secret_file.fileno())
+        try:
+            os.link(tmp_path, path)
+            return candidate
+        except FileExistsError:
+            existing = _read_secret_file(path)
+            if len(existing) >= 32:
+                return existing
+            # Pre-existing file was truncated or corrupt; replace atomically.
+            os.replace(tmp_path, path)
+            return candidate
+        except OSError:
+            os.replace(tmp_path, path)
+            return candidate
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except FileNotFoundError:
+            pass
 
 
 class Config:

@@ -1,16 +1,16 @@
 var d = document.getElementById("dashboard-sidenav");
-d.className += " active theme-primary";
+if (d) { d.classList.add('active'); }
 
 function get_data_source(el){
     el.html("");
-    el.closest('.col').find('.data-source-loading').removeClass('hide');
+    el.closest('.app-card, .custom-card').find('.data-source-loading').removeClass('hide');
     $.ajax({
         async: true,
         url: el.attr('data-url'),
         type: 'GET',
         data: {id: el.attr('data-id')},
         success: function(data){
-            el.closest('.col').find('.data-source-loading').addClass('hide');
+            el.closest('.app-card, .custom-card').find('.data-source-loading').addClass('hide');
             el.html(data);
         }
     });
@@ -19,6 +19,7 @@ function get_data_source(el){
 
 $( document ).ready(function() {
     $(".tooltipped").tooltip();
+
     $("#apps-filter").on('keyup', function(e) {
         $(".toggle-tag-expand-btn").each(function(e) {
             if ($(this).attr("data-expanded") == 'false'){

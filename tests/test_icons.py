@@ -75,3 +75,42 @@ def test_missing_folder_is_not_fatal(tmp_path, monkeypatch):
 
     monkeypatch.setattr(utils, "images_folder", str(tmp_path / "nope"))
     resize_template_app_images()
+
+
+def test_corrupt_icon_uses_logging_not_stdout(images_dir, caplog, capsys):
+    apps = images_dir / "apps"
+    broken = apps / "corrupt.png"
+    broken.write_bytes(b"not-a-valid-image")
+
+    with caplog.at_level("WARNING", logger="dashmachine.main.utils"):
+        resize_template_app_images()
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert any(
+        rec.levelname == "WARNING" and "corrupt.png" in rec.getMessage()
+        for rec in caplog.records
+    )
+
+
+def test_failed_icon_save_leaves_original_intact_and_cleans_tmp(
+    images_dir, monkeypatch, caplog
+):
+    apps = images_dir / "apps"
+    big = apps / "interrupted.png"
+    _write_icon(big, (200, 200))
+    original_bytes = big.read_bytes()
+
+    def failing_save(self, fp, *args, **kwargs):
+        with open(fp, "wb") as handle:
+            handle.write(b"partial")
+        raise OSError("disk full")
+
+    monkeypatch.setattr(Image.Image, "save", failing_save)
+
+    with caplog.at_level("WARNING", logger="dashmachine.main.utils"):
+        resize_template_app_images()
+
+    assert big.read_bytes() == original_bytes
+    assert not (apps / "interrupted.png.tmp").exists()
+    assert "skipping unreadable icon" in caplog.text

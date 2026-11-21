@@ -1,6 +1,14 @@
 [tool.pytest.ini_options]
+pythonpath = ["."]
 testpaths = ["tests"]
 addopts = "-q"
 filterwarnings = [
     "error::DeprecationWarning:dashmachine.*",
 ]
+
+[tool.coverage.run]
+source = ["dashmachine"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

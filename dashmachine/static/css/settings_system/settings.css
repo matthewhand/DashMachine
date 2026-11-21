@@ -1,66 +1,94 @@
+/* Settings page. The two panels scroll independently so the config being
+   edited and its documentation can be read side by side.
 
-@media (min-width: 990px)
-{
-    body {
-        overflow: hidden !important;
-    }
-}
-
-@media (max-width: 990px)
-{
-    body {
-        max-height: 200vh !important;
-    }
-}
+   Inactive tab panels carry an inline display:none so nothing flashes before
+   the tab plugin runs; the plugin then toggles those inline styles. */
 
 .settings-page-card-right {
-    max-height: calc(100vh - 142px) !important;
-    min-height: calc(100vh - 142px) !important;
-}
-.settings-page-card-left {
-    max-height: calc(100vh - 130px) !important;
-    min-height: calc(100vh - 130px) !important;
+    max-height: calc(100vh - 220px);
+    min-height: calc(100vh - 220px);
+    padding-right: 0.5rem;
 }
 
-#apps .dropdown-content {
-    border-top-left-radius: 0px;
-    border-top-right-radius: 0px;
-    background: var(--theme-surface-1);
+@media (max-width: 1100px) {
+    .settings-page-card-right {
+        max-height: none;
+        min-height: 0;
+    }
 }
 
-#settings-readme h5, #cards-readme h5, #data-sources-readme h5 {
-    color: var(--theme-primary);
-    margin-top: 5%;
+#config-textarea {
+    min-height: calc(100vh - 260px);
 }
-#settings-readme h4, #cards-readme h4, #data-sources-readme h4 {
+
+@media (max-width: 1100px) {
+    #config-textarea { min-height: 420px; }
+}
+
+/* documentation typography */
+#settings-readme h4,
+#cards-readme h4,
+#data-sources-readme h4 {
+    margin-top: 1.5rem;
     color: var(--theme-color-font-muted);
-    margin-top: 5%;
 }
-#configini-readme {
-    margin-top: 2% !important;
+#settings-readme h5,
+#cards-readme h5,
+#data-sources-readme h5 {
+    margin-top: 1.2rem;
+    color: var(--theme-primary);
 }
-#settings-readme code, #cards-readme code, #data-sources-readme code {
-    -webkit-touch-callout: all;
-    -webkit-user-select: all;
-    -khtml-user-select: all;
-    -moz-user-select: all;
-    -ms-user-select: all;
+#settings-readme table,
+#cards-readme table,
+#data-sources-readme table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.8rem 0 1.2rem;
+    font-size: 0.84rem;
+}
+#settings-readme th,
+#cards-readme th,
+#data-sources-readme th {
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid var(--theme-border-strong);
+    color: var(--theme-primary);
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+#settings-readme td,
+#cards-readme td,
+#data-sources-readme td {
+    padding: 0.45rem 0.6rem;
+    border-bottom: 1px solid var(--theme-border);
+    vertical-align: top;
+    user-select: text;
+    cursor: text;
+}
+#settings-readme code,
+#cards-readme code,
+#data-sources-readme code {
+    padding: 0.1rem 0.3rem;
+    border-radius: var(--radius-xs);
+    background: var(--theme-surface-2);
+    white-space: pre-wrap;
     user-select: all;
     cursor: text;
-    white-space: pre-wrap;
 }
-#settings-readme th, #cards-readme th, #data-sources-readme th {
-    color: var(--theme-primary);
+#settings-readme pre,
+#cards-readme pre,
+#data-sources-readme pre {
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius-sm);
+    background: var(--theme-surface-2);
+    overflow-x: auto;
 }
-#settings-readme td, #cards-readme td, #data-sources-readme td {
-    -webkit-touch-callout: text !important;
-    -webkit-user-select: text !important;
-    -khtml-user-select: text !important;
-    -moz-user-select: text !important;
-    -ms-user-select: text !important;
-    user-select: text !important;
-    cursor: text;
-}
-#settings-readme strong, #cards-readme strong, #data-sources-readme strong {
-    font-weight: 900;
+#template-div {
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius-sm);
+    background: var(--theme-surface-2);
+    border: 1px solid var(--theme-border);
+    font-size: 0.82rem;
+    min-height: 60px;
 }
