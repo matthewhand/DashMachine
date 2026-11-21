@@ -99,7 +99,7 @@ class Platform:
     def process(self):
         try:
             value = requests.get(
-                f"https://www.metaweather.com/api/location/{self.woeid}"
+                f"https://www.metaweather.com/api/location/{self.woeid}", timeout=10
             ).json()
         except Exception as error:
             return render_template_string(self.error_template, error=error)

@@ -61,7 +61,7 @@ class Platform:
 
     def _api_call(self, method, params=[]):
         json = {"id": self.id, "method": method, "params": params}
-        return self.session.post(self.resource, json=json)
+        return self.session.post(self.resource, json=json, timeout=10)
 
     def process(self):
         r = self._api_call("web.update_ui", ["download_rate", "upload_rate"])

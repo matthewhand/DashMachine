@@ -61,6 +61,16 @@ import time
 import hashlib
 
 
+def _get(url, **kwargs):
+    kwargs.setdefault("timeout", 10)
+    return requests.get(url, **kwargs)
+
+
+def _post(url, **kwargs):
+    kwargs.setdefault("timeout", 10)
+    return requests.post(url, **kwargs)
+
+
 def inApiLink(ip, endpoint):
     return "http://" + str(ip) + "/admin/scripts/pi-hole/php/" + str(endpoint) + ".php"
 
@@ -83,12 +93,12 @@ class PiHole(object):
         self.pw = None
 
     def refresh(self):
-        rawdata = requests.get(
+        rawdata = _get(
             "http://" + self.ip_address + "/admin/api.php?summary"
         ).json()
 
         if self.auth_data != None:
-            topdevicedata = requests.get(
+            topdevicedata = _get(
                 "http://"
                 + self.ip_address
                 + "/admin/api.php?getQuerySources=25&auth="
@@ -97,14 +107,14 @@ class PiHole(object):
 
             self.top_devices = topdevicedata["top_sources"]
 
-            self.forward_destinations = requests.get(
+            self.forward_destinations = _get(
                 "http://"
                 + self.ip_address
                 + "/admin/api.php?getForwardDestinations&auth="
                 + self.auth_data.token
             ).json()
 
-            self.query_types = requests.get(
+            self.query_types = _get(
                 "http://"
                 + self.ip_address
                 + "/admin/api.php?getQueryTypes&auth="
@@ -130,7 +140,7 @@ class PiHole(object):
             print("Unable to fetch top items. Please authenticate.")
             exit(1)
 
-        rawdata = requests.get(
+        rawdata = _get(
             "http://"
             + self.ip_address
             + "/admin/api.php?topItems="
@@ -142,7 +152,7 @@ class PiHole(object):
         self.top_ads = rawdata["top_ads"]
 
     def getGraphData(self):
-        rawdata = requests.get(
+        rawdata = _get(
             "http://" + self.ip_address + "/admin/api.php?overTimeData10mins"
         ).json()
         return {
@@ -160,7 +170,7 @@ class PiHole(object):
         if self.auth_data == None:
             print("Unable to get queries. Please authenticate")
             exit(1)
-        return requests.get(
+        return _get(
             "http://"
             + self.ip_address
             + "/admin/api.php?getAllQueries&auth="
@@ -171,7 +181,7 @@ class PiHole(object):
         if self.auth_data == None:
             print("Unable to enable pihole. Please authenticate")
             exit(1)
-        requests.get(
+        _get(
             "http://"
             + self.ip_address
             + "/admin/api.php?enable&auth="
@@ -182,7 +192,7 @@ class PiHole(object):
         if self.auth_data == None:
             print("Unable to disable pihole. Please authenticate")
             exit(1)
-        requests.get(
+        _get(
             "http://"
             + self.ip_address
             + "/admin/api.php?disable="
@@ -192,7 +202,7 @@ class PiHole(object):
         )
 
     def getVersion(self):
-        return requests.get(
+        return _get(
             "http://" + self.ip_address + "/admin/api.php?versions"
         ).json()
 
@@ -201,7 +211,7 @@ class PiHole(object):
             print("Please authenticate")
             exit(1)
         return float(
-            requests.get(
+            _get(
                 "http://"
                 + self.ip_address
                 + "/admin/api_db.php?getDBfilesize&auth="
@@ -210,7 +220,7 @@ class PiHole(object):
         )
 
     def getList(self, list):
-        return requests.get(
+        return _get(
             inApiLink(self.ip_address, "get") + "?list=" + str(list)
         ).json()
 
@@ -222,7 +232,7 @@ class PiHole(object):
             s.get(
                 "http://" + str(self.ip_address) + "/admin/scripts/pi-hole/php/add.php"
             )
-            requests.post(
+            _post(
                 "http://" + str(self.ip_address) + "/admin/scripts/pi-hole/php/add.php",
                 data={"list": list, "domain": domain, "pw": self.pw},
             ).text
@@ -235,7 +245,7 @@ class PiHole(object):
             s.get(
                 "http://" + str(self.ip_address) + "/admin/scripts/pi-hole/php/sub.php"
             )
-            requests.post(
+            _post(
                 "http://" + str(self.ip_address) + "/admin/scripts/pi-hole/php/sub.php",
                 data={"list": list, "domain": domain, "pw": self.pw},
             ).text

@@ -52,16 +52,13 @@ class Platform:
             self.response_type = "plain"
 
     def process(self):
-        if self.response_type.lower() == "json":
-            try:
-                value = requests.get(self.resource).json()
-                print(value)
-            except Exception as e:
-                value = f"{e}"
-        else:
-            try:
-                value = requests.get(self.resource)
-            except Exception as e:
-                value = f"{e}"
+        try:
+            response = requests.get(self.resource, timeout=10)
+            if self.response_type.lower() == "json":
+                value = response.json()
+            else:
+                value = response.text
+        except Exception as e:
+            value = f"{e}"
 
         return render_template_string(self.value_template, value=value)

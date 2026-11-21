@@ -1,26 +1,35 @@
-import os
 import importlib
+import logging
+import os
 from shutil import copyfile
-from PIL import Image
+
 from markdown2 import markdown
+from PIL import Image
+
+from dashmachine import db
+from dashmachine.main.models import Groups
+from dashmachine.main.read_config import read_config
 from dashmachine.paths import (
-    dashmachine_folder,
     images_folder,
     root_folder,
     user_data_folder,
 )
-from dashmachine.main.models import Groups
-from dashmachine.main.read_config import read_config
 from dashmachine.version import version as dashmachine_version
-from dashmachine import db
+
+log = logging.getLogger(__name__)
 
 
 def row2dict(row):
-    d = {}
-    for column in row.__table__.columns:
-        d[column.name] = str(getattr(row, column.name))
+    return {column.name: str(getattr(row, column.name)) for column in row.__table__.columns}
 
-    return d
+
+def safe_join(base, *names):
+    """Join user-supplied names to *base*, refusing anything that escapes it."""
+    base = os.path.realpath(base)
+    path = os.path.realpath(os.path.join(base, *names))
+    if os.path.commonpath([base, path]) != base:
+        raise ValueError(f"path escapes {base}: {names!r}")
+    return path
 
 
 # establishes routes decorated w/ @public_route as accessible while not signed
@@ -30,66 +39,102 @@ def public_route(decorated_function):
     return decorated_function
 
 
-def dashmachine_init():
-    resize_template_app_images()
-    db.create_all()
-    db.session.commit()
+def _database_path(app):
+    uri = app.config["SQLALCHEMY_DATABASE_URI"]
+    prefix = "sqlite:///"
+    return uri[len(prefix):] if uri.startswith(prefix) else None
 
-    user_data_folder = os.path.join(dashmachine_folder, "user_data")
 
-    # create the user_data subdirectories, link them to static
-    user_backgrounds_folder = os.path.join(user_data_folder, "backgrounds")
-    backgrounds_folder = os.path.join(images_folder, "backgrounds")
-    if not os.path.isdir(user_backgrounds_folder):
-        os.mkdir(user_backgrounds_folder)
-    if not os.path.isdir(backgrounds_folder):
-        os.symlink(user_backgrounds_folder, backgrounds_folder)
+def _link_user_folder(name):
+    """Expose a user-data folder under static/ so it can be served."""
+    target = os.path.join(user_data_folder, name)
+    link = os.path.join(images_folder, name)
+    os.makedirs(target, exist_ok=True)
+    if os.path.islink(link) or os.path.exists(link):
+        return
+    try:
+        os.symlink(target, link)
+    except OSError as exc:
+        log.warning("could not link %s to %s: %s", link, target, exc)
 
-    user_icons_folder = os.path.join(user_data_folder, "icons")
-    icons_folder = os.path.join(images_folder, "icons")
-    if not os.path.isdir(user_icons_folder):
-        os.mkdir(user_icons_folder)
-    if not os.path.isdir(icons_folder):
-        os.symlink(user_icons_folder, icons_folder)
+
+def prepare_user_data():
+    """Create the writable data layout and the default config on first boot."""
+    os.makedirs(user_data_folder, exist_ok=True)
+    _link_user_folder("backgrounds")
+    _link_user_folder("icons")
 
     config_file = os.path.join(user_data_folder, "config.ini")
     if not os.path.exists(config_file):
-        copyfile("default_config.ini", config_file)
+        copyfile(os.path.join(root_folder, "default_config.ini"), config_file)
 
-    read_config()
+
+def dashmachine_init(app, reset_db=True):
+    """Initialise the data directory and the database.
+
+    The database is derived state: ``config.ini`` is the source of truth, so it
+    is rebuilt from scratch on every boot. Runs once, before the server starts
+    accepting requests (gunicorn preloads the app).
+    """
+    resize_template_app_images()
+    prepare_user_data()
+
+    with app.app_context():
+        if reset_db:
+            db_file = _database_path(app)
+            if db_file:
+                for suffix in ("", "-wal", "-shm"):
+                    try:
+                        os.remove(db_file + suffix)
+                    except FileNotFoundError:
+                        pass
+        db.create_all()
+        db.session.commit()
+        read_config()
+        # Do not hand a pooled SQLite connection to forked workers.
+        db.session.remove()
+        db.engine.dispose()
 
 
 def check_groups(groups, current_user):
-    if current_user.is_anonymous:
-        current_user.role = "public_user"
+    """Does this user belong to one of the comma-separated *groups*?
+
+    Tolerates being called outside a request (for example while rendering a
+    data source template), where ``current_user`` is unbound.
+    """
+    role = None
+    if getattr(current_user, "is_anonymous", True):
+        role = "public_user"
+        try:
+            current_user.role = "public_user"
+        except (AttributeError, RuntimeError):
+            pass
+    else:
+        role = getattr(current_user, "role", None)
 
     if groups:
-        groups_list = groups.split(",")
         roles_list = []
-        for group in groups_list:
-            group = Groups.query.filter_by(name=group.strip()).first()
-            for group_role in group.roles.split(","):
-                roles_list.append(group_role.strip())
-        if current_user.role in roles_list:
-            return True
-        else:
-            return False
-    else:
-        if current_user.role == "admin":
-            return True
-        else:
-            return False
+        for group in groups.split(","):
+            group_db = Groups.query.filter_by(name=group.strip()).first()
+            if group_db and group_db.roles:
+                roles_list += [
+                    role.strip() for role in group_db.roles.split(",") if role.strip()
+                ]
+        return role in roles_list
+
+    return role == "admin"
 
 
 def get_data_source(data_source):
+    if data_source is None:
+        return "unknown data source"
+
     data_source_args = {}
     for arg in data_source.args:
         arg = row2dict(arg)
         data_source_args[arg.get("key")] = arg.get("value")
     data_source = row2dict(data_source)
-    module = importlib.import_module(
-        f"dashmachine.platform.{data_source['platform']}", "."
-    )
+    module = importlib.import_module(f"dashmachine.platform.{data_source['platform']}")
     platform = module.Platform(data_source, **data_source_args)
     return platform.process()
 
@@ -143,9 +188,8 @@ def resize_template_app_images():
                         except OSError:
                             pass
         except Exception as exc:  # noqa: BLE001 - startup must not fail here
-            print(f"dashmachine: skipping unreadable icon {file!r}: {exc}", flush=True)
+            log.warning("skipping unreadable icon %r: %s", file, exc)
             continue
-
 
 
 def get_update_message_html():
@@ -155,12 +199,14 @@ def get_update_message_html():
     except FileNotFoundError:
         has_read_version = None
     if not has_read_version or has_read_version.strip() != dashmachine_version:
-        with open(
-            os.path.join(root_folder, "update_message.md"), "r"
-        ) as update_message:
-            md = update_message.read()
-
-        config_html = markdown(
+        try:
+            with open(
+                os.path.join(root_folder, "update_message.md"), "r", encoding="utf-8"
+            ) as update_message:
+                md = update_message.read()
+        except FileNotFoundError:
+            return ""
+        return markdown(
             md,
             extras=[
                 "tables",
@@ -170,9 +216,7 @@ def get_update_message_html():
                 "code-friendly",
             ],
         )
-        return config_html
-    else:
-        return ""
+    return ""
 
 
 def mark_update_message_read():

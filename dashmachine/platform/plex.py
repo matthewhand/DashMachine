@@ -54,6 +54,7 @@ class Plex(object):
             sessions = requests.get(
                 self.url + "/status/sessions?X-Plex-Token=" + self.token,
                 headers=json_header,
+                timeout=10,
             ).json()
 
             self.sessions = sessions["MediaContainer"]["size"]
@@ -61,6 +62,7 @@ class Plex(object):
             transcodes = requests.get(
                 self.url + "/transcode/sessions?X-Plex-Token=" + self.token,
                 headers=json_header,
+                timeout=10,
             ).json()
 
             self.transcodes = transcodes["MediaContainer"]["size"]
@@ -68,6 +70,7 @@ class Plex(object):
             libraries = requests.get(
                 self.url + "/library/sections?X-Plex-Token=" + self.token,
                 headers=json_header,
+                timeout=10,
             ).json()
 
             self.libraries = libraries["MediaContainer"]["size"]

@@ -1,3 +1,8 @@
+> **This is the maintained fork.** Upstream `rmountjoy92/DashMachine` has been
+> dormant since 2020-09-22. This fork keeps the same `config.ini` and UI on a
+> supported runtime (Python 3.13, Flask 3.1, SQLAlchemy 2.1). See
+> [FORK.md](FORK.md) for what changed, how to test and how to deploy.
+
 # DashMachine
 ### Another web application bookmark dashboard, with fun features.
 ![Subreddit subscribers](https://img.shields.io/reddit/subreddit-subscribers/dashmachine?style=social)

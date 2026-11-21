@@ -121,3 +121,10 @@ scheduler.db
 dashmachine/user_data/
 dashmachine/static/images/icons
 dashmachine/static/images/backgrounds
+# local tooling and test/runtime state
+.venv/
+.uv-cache/
+.pytest_cache/
+__pycache__/
+*.pyc
+dashmachine/static/cache/

@@ -87,10 +87,9 @@ class Platform:
         )
         prepped = req.prepare()
         if self.ssl_ignore == "yes":
-            resp = s.send(prepped, verify=False)
+            resp = s.send(prepped, verify=False, timeout=10)
         else:
-            resp = s.send(prepped)
-        resp = s.send(prepped)
+            resp = s.send(prepped, timeout=10)
 
         return_codes = tuple([x.replace("x", "") for x in self.return_codes.split(",")])
 

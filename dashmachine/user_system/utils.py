@@ -6,6 +6,7 @@ from dashmachine.user_system.models import User
 
 def hash_and_cache_password(password, user_id):
     hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
+    os.makedirs(auth_cache, exist_ok=True)
     with open(os.path.join(auth_cache, str(user_id)), "w") as cache_file:
         cache_file.write(hashed_password)
     return hashed_password
@@ -21,6 +22,9 @@ def get_cached_password(user_id):
 
 
 def clean_auth_cache():
+    if not os.path.isdir(auth_cache):
+        os.makedirs(auth_cache, exist_ok=True)
+        return
     for file in os.listdir(auth_cache):
         if not User.query.filter_by(id=file).first():
             os.remove(os.path.join(auth_cache, file))

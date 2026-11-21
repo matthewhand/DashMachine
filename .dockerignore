@@ -1,6 +1,16 @@
 .git
+.gitignore
 .idea/
+.venv/
+.uv-cache/
+.pytest_cache/
+__pycache__/
+*.pyc
+tests/
+requirements-dev.in
+requirements-dev.txt
 
 dashmachine/user_data/
 dashmachine/static/images/icons
 dashmachine/static/images/backgrounds
+dashmachine/static/cache/

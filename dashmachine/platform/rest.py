@@ -87,7 +87,11 @@ class Platform:
         if self.method.upper() == "GET":
             try:
                 value = get(
-                    self.resource, auth=auth, headers=self.headers, verify=verify
+                    self.resource,
+                    auth=auth,
+                    headers=self.headers,
+                    verify=verify,
+                    timeout=10,
                 ).json()
             except Exception as e:
                 value = f"{e}"
@@ -100,6 +104,7 @@ class Platform:
                 auth=auth,
                 headers=self.headers,
                 verify=verify,
+                timeout=10,
             )
         value_template = render_template_string(self.value_template, value=value)
         return value_template

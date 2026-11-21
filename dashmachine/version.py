@@ -1,2 +1,2 @@
-version = "v0.5"
-revision_number = "4.1"
+version = "v0.6.0"
+revision_number = "1"
