@@ -28,7 +28,6 @@ GLOBAL_JS = [
 ]
 
 GLOBAL_CSS = [
-    "global/style.css",
     "global/dashmachine-theme.css",
     "global/dashmachine.css",
     "global/tcdrop.css",

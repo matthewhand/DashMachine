@@ -1,9 +1,9 @@
 {% extends "main/layout.html" %}
-{% from 'global_macros.html' import input, button, select %}
+{% from 'global_macros.html' import input, button %}
 {% from 'main/tcdrop.html' import tcdrop %}
 {% from 'settings_system/files.html' import FilesTab with context %}
-{% block page_vendor_css %}
-{% endblock page_vendor_css %}
+
+{% block page_title %}Settings{% endblock page_title %}
 
 {% block page_lvl_css %}
     {{ process_css_sources(src="settings_system/settings.css")|safe }}
@@ -12,8 +12,9 @@
             #main {
                 background-image: url("{{ settings.background }}");
                 background-size: cover;
+                background-position: center;
                 background-attachment: fixed;
-                min-height: 100vh;
+                min-height: calc(100vh - 60px);
             }
         </style>
     {% endif %}
@@ -21,150 +22,105 @@
 
 {% block content %}
 
-    <div id="main" class="main-full">
-        <div class="container">
-            <div class="row">
-                <div class="col s12 m12 l6">
-                    <div class="card">
-                        <div class="card-content">
-                            <div class="row">
-                                <div class="col s12">
-                                    <span>
-                                        <span style="font-size: 2rem; position: relative; top: 8px;">Config.ini</span>
-                                        {{ button(
-                                        icon="save",
-                                        id="save-config-btn",
-                                        float="right",
-                                        class="ml-0 mt-1 mb-1",
-                                        data={'url': url_for('settings_system.save_config')},
-                                        text="save"
-                                        ) }}
-                                    </span>
-                                </div>
-                            </div>
+    <div id="main" class="page">
+        <div class="settings-grid">
+
+            {# ---------------- config.ini ---------------- #}
+            <section class="card">
+                <div class="card-content">
+                    <div class="panel-head">
+                        <h2>config.ini</h2>
+                        {{ button(
+                        icon="save",
+                        id="save-config-btn",
+                        class="ml-0",
+                        data={'url': url_for('settings_system.save_config')},
+                        text="save"
+                        ) }}
+                    </div>
+                    <form id="config-form">
+                        {{ input(
+                        size="s12",
+                        class="materialize-textarea code",
+                        form_obj=config_form.config,
+                        id="config-textarea"
+                        ) }}
+                    </form>
+                </div>
+            </section>
+
+            {# ---------------- documentation + images ---------------- #}
+            <section class="card">
+                <div class="card-content">
+                    <ul class="tabs">
+                        <li class="tab"><a href="#settings-readme" class="active" title="Settings">
+                            <i class="material-icons-outlined">settings</i>
+                        </a></li>
+                        <li class="tab"><a href="#cards-readme" title="Cards">
+                            <i class="material-icons-outlined">aspect_ratio</i>
+                        </a></li>
+                        <li class="tab"><a href="#data-sources-readme" title="Data sources">
+                            <i class="material-icons-outlined">language</i>
+                        </a></li>
+                        <li class="tab"><a href="#images" title="Images">
+                            <i class="material-icons-outlined">photo_library</i>
+                        </a></li>
+                        <li class="tab"><a href="#about" title="About">
+                            <i class="material-icons-outlined">info</i>
+                        </a></li>
+                    </ul>
+
+                    <div id="images" class="scrollbar settings-page-card-right" style="display:none">
+                        {{ FilesTab() }}
+                    </div>
+
+                    <div id="settings-readme" class="scrollbar settings-page-card-right scrollbar-x">
+                        {{ config_readme['settings']|safe }}
+                    </div>
+
+                    <div id="cards-readme" class="scrollbar settings-page-card-right scrollbar-x" style="display:none">
+                        <h4>Cards</h4>
+                        <h5>Card Templates</h5>
+                        <p class="theme-muted2-text">Search for preconfigured cards included with DashMachine.</p>
+                        <div class="input-field search-field">
+                            <span>
+                                <i class="material-icons">search</i>
+                                <input type="text" id="templates-filter"
+                                       class="autocomplete"
+                                       data-url="{{ url_for('settings_system.get_app_template') }}"
+                                       data-template_apps="{{ template_apps }}"
+                                       placeholder="Search for an app (e.g. Nextcloud)"
+                                       autocomplete="off">
+                            </span>
                         </div>
-                        <div class="card-action scrollbar settings-page-card-left">
-                            <form id="config-form">
-                                {{ input(
-                                size="s12",
-                                class="materialize-textarea code",
-                                form_obj=config_form.config,
-                                id="config-textarea"
-                                ) }}
-                            </form>
+                        <div class="mt-3">
+                            <div id="template-div" class="selectable code"></div>
+                        </div>
+
+                        {{ config_readme['cards']|safe }}
+                    </div>
+
+                    <div id="data-sources-readme" class="scrollbar settings-page-card-right scrollbar-x" style="display:none">
+                        {{ config_readme['data_sources']|safe }}
+                    </div>
+
+                    <div id="about" class="scrollbar settings-page-card-right" style="display:none">
+                        <div class="empty-state" style="border-style: solid">
+                            <img src="static/images/logo/full.svg" alt="DashMachine" style="max-width: 220px">
+                            <h2 style="margin: 0.5rem 0 0">DashMachine</h2>
+                            <p class="theme-muted2-text m-0">Version {{ version }}-{{ revision_number }}</p>
+                            <p class="theme-muted2-text m-0">
+                                Original by Ross Mountjoy ·
+                                <a href="https://github.com/rmountjoy92/DashMachine" target="_blank" rel="noopener">upstream repo</a>
+                            </p>
+                            <p class="theme-muted2-text m-0">
+                                Local fork notes live in <code>FORK.md</code>.
+                            </p>
                         </div>
                     </div>
                 </div>
+            </section>
 
-                <div class="col s12 m12 l6">
-                    <div class="card">
-                        <div class="card-content pr-2">
-
-                            <div class="row">
-                                <div class="col s12 mb-2">
-                                    <ul class="tabs tabs-fixed-width">
-                                        <li class="tab col s3"><a href="#settings-readme">
-                                            <i class="material-icons-outlined">settings</i>
-                                        </a></li>
-
-                                        <li class="tab col s3"><a href="#cards-readme">
-                                            <i class="material-icons-outlined">aspect_ratio</i>
-                                        </a></li>
-
-                                        <li class="tab col s3"><a href="#data-sources-readme">
-                                            <i class="material-icons-outlined">language</i>
-                                        </a></li>
-
-                                        <li class="tab col s3"><a href="#images">
-                                            <i class="material-icons-outlined">photo_library</i>
-                                        </a></li>
-
-                                        <li class="tab col s3"><a href="#about">
-                                            <i class="material-icons-outlined">security</i>
-                                        </a></li>
-                                    </ul>
-                                </div>
-
-                                <div id="images" class="col s12 scrollbar settings-page-card-right">
-                                    {{ FilesTab() }}
-                                </div>
-
-                                <div id="settings-readme" class="col s12 scrollbar settings-page-card-right scrollbar-x">
-                                    {{ config_readme['settings']|safe }}
-                                </div>
-
-                                <div id="cards-readme" class="col s12 scrollbar settings-page-card-right scrollbar-x">
-                                    <h4>Cards</h4>
-                                    <h5>Card Templates</h5>
-                                    <span>Search for preconfigured cards included with DashMachine.</span>
-                                    <div class="row card-filter-container" style="position: relative;">
-                                        <div class="col s12 input-field">
-                                            <span>
-                                                <i class="material-icons prefix card-search-icon">search</i>
-                                                <input type="text" id="templates-filter"
-                                                       class="card-filter theme-surface-1 autocomplete"
-                                                       data-url="{{ url_for('settings_system.get_app_template') }}"
-                                                       data-template_apps="{{ template_apps }}"
-                                                       placeholder="Search for app (e.g. Nextcloud)">
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col s12 scrollbar">
-                                            <div id="template-div" class="selectable code"></div>
-                                        </div>
-                                    </div>
-
-                                    {{ config_readme['cards']|safe }}
-                                </div>
-
-                                <div id="data-sources-readme" class="col s12 scrollbar settings-page-card-right scrollbar-x">
-                                    {{ config_readme['data_sources']|safe }}
-                                </div>
-
-                                <div id="about" class="col s12 scrollbar settings-page-card-right">
-                                    <div class="row">
-                                        <div class="card theme-surface-1">
-                                            <div class="card-content center-align">
-                                                <img src="static/images/logo/full.svg">
-                                                <h5>DashMachine</h5>
-                                                <div class="divider"></div>
-                                                <p class="font-weight-900 mb-2">Version:</p>
-                                                <p class="mb-2">{{ version }}-{{ revision_number }}</p>
-
-                                                <div class="divider"></div>
-                                                <p class="font-weight-900 mb-2">Author:</p>
-                                                <p class="mb-2">Ross Mountjoy (<a href="https://github.com/rmountjoy92" target="_blank"> Github </a>)</p>
-
-                                                <div class="divider"></div>
-                                                <p class="font-weight-900 mb-2">Source code:</p>
-                                                <p class="mb-2"><a href="https://github.com/rmountjoy92/DashMachine" target="_blank"> Repo</a></p>
-
-                                                <div class="divider"></div>
-                                                <p class="font-weight-900 mb-2">Reddit:</p>
-                                                <p class="mb-2"><a href="https://www.reddit.com/r/DashMachine/" target="_blank"> r/DashMachine</a>
-
-                                                <div class="divider"></div>
-                                                <p class="font-weight-900 mb-2">Donations:</p>
-                                                <p class="mb-2"><a href="https://liberapay.com/rmountjoy/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></p>
-                                                <p class="mb-2"><a href="https://www.bountysource.com/teams/dashmachine-app" target="_blank"> Bountysource donation link</a></p>
-
-                                                <div class="divider"></div>
-                                                <p class="font-weight-900 mb-2">Bounties for new features:</p>
-                                                <p class="mb-2"><a href="https://www.bountysource.com/" target="_blank"> Bountysource link</a></p>
-                                                <p class="mb-2"><a href="https://github.com/bountysource/core/wiki/Frequently-Asked-Questions" target="_blank"> Bountysource faqs</a></p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-            </div>
         </div>
     </div>
 {% endblock content %}

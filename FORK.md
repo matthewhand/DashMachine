@@ -51,20 +51,59 @@ install, healthcheck on `/api/version`, gunicorn with `gthread` workers and
 `preload_app` so the one-off DB rebuild happens once in the master; each
 worker disposes the inherited SQLite connection in `post_fork`.
 
+## UI (v0.7.0)
+
+The 2020 Materialize template theme (`global/style.css`, 4,000 lines) is gone.
+It is replaced by `global/dashmachine-theme.css` (design tokens: colours, type,
+radii, elevation, and the `[data-accent]` palettes `config.ini` names) and
+`global/dashmachine.css` (layout, components, utilities).
+
+- Layout is a fixed 248px sidebar plus a sticky topbar; the sidebar collapses
+to a drawer under 960px. The old jQuery-UI draggable handle and the
+Materialize side-nav/collapsible machinery are removed.
+- The home page is a responsive CSS grid of cards (icon, name, live data-source
+  output, description on hover). Tag sections became headings instead of cards.
+- Settings is a two-panel layout: `config.ini` beside tabbed documentation and
+  image management.
+- Login and error pages are self-contained cards on a gradient background.
+- Materialize remains vendored for widget behaviour only (modal, toast,
+  dropdown, autocomplete, tabs); its look is overridden.
+- `google-fonts.css`, `jqueryui.min.js`, `page-404.css` and the knob template
+  scaffolds (`top-nav.html`, `breadcrumbs`, `register`, `add_payment_method`)
+  are deleted; nothing referenced them.
+
+Two bugs surfaced while rebuilding: the update-message modal tested
+`.text().length` on a whitespace-filled div, so it opened blank on *every* page
+load and blocked the sign-in form; and two icon ligatures (`grid_view`,
+`logout`) do not exist in the vendored Material Icons Outlined font, so they
+rendered as fallback words and forced a horizontal scrollbar.
+
 ## Tests
 
 ```sh
 uv venv --python 3.13 .venv
 uv pip install --python .venv/bin/python -r requirements-dev.txt
-.venv/bin/python -m pytest        # 61 tests
+.venv/bin/python -m pytest        # 127 tests
+.venv/bin/python -m pytest --cov=dashmachine   # 93% statement coverage
 ```
+
+`tests/test_platform_modules.py` drives every integration adapter against a
+mocked API (docker, sonarr/radarr/lidarr, tautulli, healthchecks, pihole, plex,
+weather, deluge, transmission, ping, curl, rest); `tests/test_internals.py`
+covers config, the update message, random backgrounds and the image endpoints;
+`tests/test_ui.py` pins the markup hooks the CSS and JS depend on.
+
+The UI was additionally driven in a headless Chromium: login, search
+filtering, tag collapse, card hover, sidebar hide/show, the mobile drawer,
+settings tabs and a config save, with zero console errors and no horizontal
+overflow at 1440px or 390px.
 
 `.github/workflows/tests.yml` runs the same suite plus a Docker build.
 
 ## Building and deploying
 
 ```sh
-docker build -t dashmachine:0.6.0 .
+docker build -t dashmachine:0.7.0 .
 ```
 
 The image re-creates the `static/images/{icons,backgrounds}` symlinks to
@@ -74,9 +113,10 @@ The image re-creates the `static/images/{icons,backgrounds}` symlinks to
 chown -R 1000:1000 /opt/stacks/dashmachine/data
 ```
 
-Deployed on docker1 (`10.0.0.107`): source at `/opt/src/DashMachine`,
-`/opt/stacks/dashmachine/docker-compose.yml` pinned to the built image with
-`pull_policy: never`.
+Deployed on docker1 (`10.0.0.107`) as the container `dashmachine`
+(`dashmachine:0.7.0`), data at `/opt/stacks/dashmachine/data`. The previous
+container is kept stopped as `dashmachine-old-0.6.0` for rollback, and the
+image `dashmachine:0.6.0` is still present.
 
 ## Upstream
 

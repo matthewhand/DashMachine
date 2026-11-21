@@ -1,26 +1,14 @@
 {% extends "main/base.html" %}
-{% from 'global_macros.html' import button %}
 
+{% block page_title %}Unauthorized{% endblock page_title %}
 
 {% block content %}
-    <div class="row center-align mt-10">
-        <div class="col s12">
-            <i class="material-icons-outlined theme-failure-text" style="font-size: 8rem">warning</i>
-            <h4>Unauthorized</h4>
-
-            <p>This user account is not in the access group allowed to view this page.</p> 
-
-            {{ button(
-            float="center",
-            href=url_for('user_system.login'),
-            text="Go to login"
-            ) }}
-
-            {{ button(
-            float="center",
-            href="javascript:history.back()",
-            text="Go back"
-            ) }}
+    <div class="error-page">
+        <div>
+            <i class="material-icons-outlined theme-failure-text" style="font-size: 3rem">lock</i>
+            <p class="error-page__msg">This account is not in the access group allowed to view this page.</p>
+            <a class="btn btn--ghost" href="javascript:history.back()">Go back</a>
+            <a class="btn" href="{{ url_for('user_system.login') }}">Sign in</a>
         </div>
     </div>
 {% endblock content %}

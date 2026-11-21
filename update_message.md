@@ -1,3 +1,21 @@
+### DashMachine v0.7.0 — new interface
+
+The dashboard has been rebuilt on a modern design system instead of the 2020
+Materialize template:
+
+- A proper sidebar and topbar; the sidebar collapses to a drawer on phones.
+- Cards are a responsive grid with the icon, name, live data and a description
+  on hover; tags are section headings instead of cards.
+- Settings is two panels: `config.ini` on the left, documentation and image
+  management on the right.
+- Light and dark themes, and every accent colour in `config.ini`, restyled.
+- The update notice no longer blocks the sign-in screen, and the page no longer
+  scrolls sideways.
+
+Your `config.ini`, cards, icons and login are unchanged.
+
+---
+
 ### DashMachine v0.6.0 — maintained fork
 
 This instance now runs `matthewhand/DashMachine`, a maintained fork of the
